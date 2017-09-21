@@ -10,7 +10,7 @@ from scipy import stats
 import numpy as np
 
 SCOPE = ["https://spreadsheets.google.com/feeds"]
-SECRETS_FILE = r"trackerKey.json"
+SECRETS_FILE = r"QuickTracker.json"
 SPREADSHEET = "Weight tracker"
 
 # Authenticate using the signed key
@@ -32,7 +32,7 @@ del weights['Predictor']
 
 now = datetime.datetime.now()
 flight_datetime = datetime.datetime(2017, 10, 7,7,00,00)
-trend_start_time = now-datetime.timedelta(days=28)
+trend_start_time = now-datetime.timedelta(days=30)
 date_in_date_range = weights[(weights['Timestamp'] > trend_start_time)].copy()
 date_in_date_range['since'] = (date_in_date_range['Timestamp'] - pd.to_datetime(trend_start_time))
 date_in_date_range['since'] = (date_in_date_range['since'].astype(np.int64)/10**9).astype(np.int64)
@@ -42,13 +42,15 @@ kg_weight = list(date_in_date_range['Weight (kg)'])
 slope, intercept, r_value, p_value, std_err = stats.linregress(since, kg_weight)
 
 
-time_to_flight = flight_datetime - date_in_date_range['Timestamp'].iloc[-1]
+time_to_flight = flight_datetime - trend_start_time
 ttf_seconds = time_to_flight.total_seconds() 
-flight_weight = (slope*(date_in_date_range['since'].iloc[-1]+ttf_seconds))+date_in_date_range['Weight (kg)'].iloc[-1]
+flight_weight = (slope*(ttf_seconds))+intercept
 
 
 print('Time to Flight: {}'.format(time_to_flight))
 print('Predicted weight: {}'.format(flight_weight))
+print('Weight lost: {}'.format(max(weights['Weight (kg)'])-date_in_date_range['Weight (kg)'].iloc[-1]))
+print("r-squared:", r_value**2)
 
 
 output_file(r"weight.html")
@@ -83,6 +85,6 @@ future_weight_top = Span(location=88.7, dimension='width', line_color='green', l
 future_weight_bottom = Span(location=65.4, dimension='width', line_color='green', line_width=2)
 s1.renderers.extend([now_vline, target_vline, target_hline, obese_hline, future_weight_top, future_weight_bottom])
 s1.circle(x='Timestamp', y='Weight (kg)',source=source,size=3)
-s1.line(x=[time.mktime(date_in_date_range['Timestamp'].iloc[-1].timetuple())*1000, time.mktime(flight_datetime.timetuple())*1000],y=[date_in_date_range['Weight (kg)'].iloc[-1],flight_weight],line_dash='dotted')
+s1.line(x=[time.mktime(trend_start_time.timetuple())*1000, time.mktime(flight_datetime.timetuple())*1000],y=[intercept,flight_weight],line_dash='dotted')
 
 save(s1)
