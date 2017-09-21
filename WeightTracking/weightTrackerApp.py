@@ -47,7 +47,7 @@ ttf_seconds = time_to_flight.total_seconds()
 flight_weight = (slope*(ttf_seconds))+intercept
 
 
-print('Time to Flight: {}'.format(time_to_flight))
+print('Time to Flight: {}'.format(flight_datetime - now))
 print('Predicted weight: {}'.format(flight_weight))
 print('Weight lost: {}'.format(max(weights['Weight (kg)'])-date_in_date_range['Weight (kg)'].iloc[-1]))
 print("r-squared:", r_value**2)
